@@ -9,3 +9,13 @@ variable "aws_region" {
   type    = string
   default = "us-west-1"
 }
+
+variable "aws_acm_certificate_arn" {
+    description = "AWS SSL certificate ARN"
+    type = string
+}
+
+variable "aws_route53_hosted_zone_id" {
+    description = "AWS Route 53 Hosted Zone ID"
+    type = string
+}

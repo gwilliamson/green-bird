@@ -135,6 +135,32 @@ resource "aws_apigatewayv2_route" "web" {
   target    = "integrations/${aws_apigatewayv2_integration.web.id}"
 }
 
+resource "aws_apigatewayv2_domain_name" "gerg_ing" {
+    domain_name = "www.gerg.ing"
+    domain_name_configuration {
+        certificate_arn = var.aws_acm_certificate_arn
+        endpoint_type = "REGIONAL"
+        security_policy = "TLS_1_2"
+    }
+}
+
+resource "aws_apigatewayv2_api_mapping" "gerg_ing" {
+    api_id = aws_apigatewayv2_api.lambda.id
+    domain_name = aws_apigatewayv2_domain_name.gerg_ing.domain_name
+    stage = aws_apigatewayv2_stage.lambda.id
+}
+
+resource "aws_route53_record" "www_record" {
+    zone_id = var.aws_route53_hosted_zone_id
+    name    = "www.gerg.ing"
+    type    = "A"
+    alias {
+        name                   = aws_apigatewayv2_domain_name.gerg_ing.domain_name_configuration[0].target_domain_name
+        zone_id                = aws_apigatewayv2_domain_name.gerg_ing.domain_name_configuration[0].hosted_zone_id
+        evaluate_target_health = false
+    }
+}
+
 resource "aws_cloudwatch_log_group" "api_gw" {
   name = "/aws/api_gw/${aws_apigatewayv2_api.lambda.name}"
 
