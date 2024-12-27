@@ -243,7 +243,8 @@ fabric.properties
 **/.terraform/
 **/terraform.tfstate*
 
-
+# www zip
+www/web.zip
 
 
 
