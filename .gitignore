@@ -241,6 +241,7 @@ fabric.properties
 
 # Terraform directories
 **/.terraform/
+**/terraform.tfstate*
 
 
 
