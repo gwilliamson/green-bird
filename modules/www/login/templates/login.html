@@ -3,13 +3,11 @@
 <head>
     <title>Login</title>
     <script>
-        const cognitoDomain = "green-bird-app.auth.us-west-1.amazoncognito.com";
-        const clientId = "37ipskkic41o5u67v81nfhbfff";
-        const redirectUri = window.location.origin + "/login";
+        const redirectUri = window.location.origin + "${redirect_uri}";
 
         // Redirect to Cognito for Login
         function redirectToCognitoLogin() {
-            const loginUrl = `https://${cognitoDomain}/login?response_type=token&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+            const loginUrl = `${cognito_domain}/login?response_type=token&client_id=${cognito_app_client_id}&redirect_uri=$${encodeURIComponent(redirectUri)}`;
             window.location.href = loginUrl;
         }
 

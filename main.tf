@@ -26,4 +26,6 @@ module "www" {
   api_gateway_api_id = module.apigateway.id
   api_gateway_api_execution_arn = module.apigateway.execution_arn
   api_gateway_authorizer_id = module.apigateway.authorizer_id
+  cognito_domain = module.cognito.cognito_domain
+  cognito_app_client_id = module.cognito.user_pool_client_id
 }

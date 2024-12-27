@@ -69,11 +69,14 @@ resource "aws_s3_object" "lambda_login" {
  */
 resource "aws_s3_object" "login_html" {
   bucket = aws_s3_bucket.lambda_bucket.id
-  key    = "templates/login.html" # File name in the bucket
-  source = "${path.module}/login/templates/login.html" # Path to the local login.html file
+  key    = "templates/login.html"
+  content = templatefile("${path.module}/login/templates/login.html", {
+    cognito_domain        = var.cognito_domain
+    cognito_app_client_id = var.cognito_app_client_id
+    redirect_uri          = "/login"
+  })
 
-  content_type = "text/html"
-  etag         = filemd5("${path.module}/login/templates/login.html") # Compute the MD5 hash of the file
+  content_type  = "text/html"
   cache_control = "no-cache, no-store, must-revalidate"
 }
 

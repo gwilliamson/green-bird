@@ -9,3 +9,11 @@ variable "api_gateway_api_execution_arn" {
 variable "api_gateway_authorizer_id" {
     description = "ID of the API Gateway Authorizer"
 }
+
+variable "cognito_domain" {
+  description = "Cognito Domain"
+}
+
+variable "cognito_app_client_id" {
+  description = "ID of the Cognito App Client"
+}
