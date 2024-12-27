@@ -64,6 +64,39 @@ resource "aws_s3_object" "lambda_login" {
   etag = filemd5(data.archive_file.lambda_login.output_path)
 }
 
+/*
+ * Upload login.html to the same S3 bucket
+ */
+resource "aws_s3_object" "login_html" {
+  bucket = aws_s3_bucket.lambda_bucket.id
+  key    = "templates/login.html" # File name in the bucket
+  source = "${path.module}/login/templates/login.html" # Path to the local login.html file
+
+  content_type = "text/html"
+  etag         = filemd5("${path.module}/login/templates/login.html") # Compute the MD5 hash of the file
+  cache_control = "no-cache, no-store, must-revalidate"
+}
+
+resource "aws_iam_policy" "lambda_s3_access" {
+  name = "LambdaS3Access"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = "s3:GetObject",
+        Resource = "${aws_s3_bucket.lambda_bucket.arn}/templates/login.html"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_s3_access_attachment" {
+  role       = aws_iam_role.lambda_exec.name
+  policy_arn = aws_iam_policy.lambda_s3_access.arn
+}
+
 resource "aws_lambda_function" "login" {
   function_name = "GreenBirdLogin"
   s3_bucket = aws_s3_bucket.lambda_bucket.id
@@ -72,6 +105,11 @@ resource "aws_lambda_function" "login" {
   handler = "login_function.handler"
   source_code_hash = data.archive_file.lambda_login.output_base64sha256
   role = aws_iam_role.lambda_exec.arn
+  environment {
+    variables = {
+      BUCKET_NAME = aws_s3_bucket.lambda_bucket.id
+    }
+  }
 }
 
 resource "aws_cloudwatch_log_group" "green-bird-login-log-group" {

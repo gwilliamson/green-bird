@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+    <script>
+        const cognitoDomain = "green-bird-app.auth.us-west-1.amazoncognito.com";
+        const clientId = "37ipskkic41o5u67v81nfhbfff";
+        const redirectUri = window.location.origin + "/login";
+
+        // Redirect to Cognito for Login
+        function redirectToCognitoLogin() {
+            const loginUrl = `https://${cognitoDomain}/login?response_type=token&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+            window.location.href = loginUrl;
+        }
+
+        // Extract the token from the URL after redirect
+        function extractToken() {
+            const hash = window.location.hash.substr(1);
+            const params = new URLSearchParams(hash);
+            const accessToken = params.get("access_token");
+
+            if (accessToken) {
+                document.getElementById("token").innerText = accessToken;
+                console.log("Access Token:", accessToken);
+            } else {
+                console.error("No access token found.");
+            }
+        }
+
+        // Run on page load to check for tokens
+        window.onload = extractToken;
+    </script>
+</head>
+<body>
+    <div class="login-container">
+        <h1>App Login</h1>
+        <button onclick="redirectToCognitoLogin()">Login with Cognito</button>
+        <p id="token" style="word-wrap: break-word;"></p>
+    </div>
+</body>
+</html>

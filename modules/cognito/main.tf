@@ -61,10 +61,21 @@ resource "aws_cognito_user_pool" "gerg_ing_pool" {
 
 resource "aws_cognito_user_pool_client" "gerg_ing_client" {
   name = "gerg_ing_user_pool_client"
-  explicit_auth_flows = ["ALLOW_USER_PASSWORD_AUTH", "ALLOW_REFRESH_TOKEN_AUTH"]
   user_pool_id  = aws_cognito_user_pool.gerg_ing_pool.id
+  allowed_oauth_flows        = ["implicit"]
+  allowed_oauth_scopes       = ["openid", "profile", "aws.cognito.signin.user.admin"]
+  supported_identity_providers = ["COGNITO"]
+  allowed_oauth_flows_user_pool_client = true
+  callback_urls              = ["https://www.gerg.ing/login"]
+  logout_urls                = ["https://www.gerg.ing/logout"]
   lifecycle {
     prevent_destroy = true
   }
 }
+
+resource "aws_cognito_user_pool_domain" "gerg_ing_domain" {
+  domain       = "green-bird-app" # Replace with your preferred prefix
+  user_pool_id = aws_cognito_user_pool.gerg_ing_pool.id
+}
+
 

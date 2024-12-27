@@ -12,3 +12,7 @@ output "user_pool_endpoint" {
   description = "User pool endpoint"
   value = aws_cognito_user_pool.gerg_ing_pool.endpoint
 }
+
+output "cognito_domain" {
+  value = "https://${aws_cognito_user_pool_domain.gerg_ing_domain.domain}.auth.${var.aws_region}.amazoncognito.com"
+}
