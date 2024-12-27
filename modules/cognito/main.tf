@@ -16,6 +16,10 @@ resource "aws_cognito_user_pool" "gerg_ing_pool" {
   alias_attributes           = ["email"]
   auto_verified_attributes   = ["email"]
 
+  admin_create_user_config {
+    allow_admin_create_user_only = true
+  }
+
   password_policy {
     minimum_length    = 6
     require_lowercase = true
@@ -77,5 +81,6 @@ resource "aws_cognito_user_pool_domain" "gerg_ing_domain" {
   domain       = "green-bird-app" # Replace with your preferred prefix
   user_pool_id = aws_cognito_user_pool.gerg_ing_pool.id
 }
+
 
 
