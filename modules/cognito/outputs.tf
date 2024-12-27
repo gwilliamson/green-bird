@@ -14,5 +14,17 @@ output "user_pool_endpoint" {
 }
 
 output "cognito_domain" {
-  value = "https://${aws_cognito_user_pool_domain.gerg_ing_domain.domain}.auth.${var.aws_region}.amazoncognito.com"
+  value = format(
+    "%s.auth.%s.amazoncognito.com",
+    aws_cognito_user_pool_domain.gerg_ing_domain.domain,
+    var.aws_region
+  )
+}
+
+output "cognito_issuer" {
+  value = format(
+    "https://cognito-idp.%s.amazonaws.com/%s",
+    var.aws_region,
+    aws_cognito_user_pool.gerg_ing_pool.id
+  )
 }

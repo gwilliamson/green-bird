@@ -7,5 +7,5 @@ output "green_bird_lambda_bucket_name" {
 output "function_name" {
   description = "Name of the Lambda function."
 
-  value = aws_lambda_function.web.function_name
+  value = aws_lambda_function.app.function_name
 }

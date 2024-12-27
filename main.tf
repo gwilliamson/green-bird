@@ -28,4 +28,5 @@ module "www" {
   api_gateway_authorizer_id = module.apigateway.authorizer_id
   cognito_domain = module.cognito.cognito_domain
   cognito_app_client_id = module.cognito.user_pool_client_id
+  cognito_issuer = module.cognito.cognito_issuer
 }

@@ -17,3 +17,12 @@ variable "cognito_domain" {
 variable "cognito_app_client_id" {
   description = "ID of the Cognito App Client"
 }
+
+variable "cognito_issuer" {
+  description = "URI of Cognito Issuer"
+}
+
+variable "redirect_uri" {
+  description = "URI to redirect to upon successful auth"
+  default = "https://www.gerg.ing/app"
+}

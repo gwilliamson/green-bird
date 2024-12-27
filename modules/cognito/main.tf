@@ -70,7 +70,7 @@ resource "aws_cognito_user_pool_client" "gerg_ing_client" {
   allowed_oauth_scopes       = ["openid", "profile", "aws.cognito.signin.user.admin"]
   supported_identity_providers = ["COGNITO"]
   allowed_oauth_flows_user_pool_client = true
-  callback_urls              = ["https://www.gerg.ing/login"]
+  callback_urls              = ["https://www.gerg.ing/app"]
   logout_urls                = ["https://www.gerg.ing/logout"]
   lifecycle {
     prevent_destroy = true

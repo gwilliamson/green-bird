@@ -49,154 +49,119 @@ resource "aws_iam_role_policy_attachment" "lambda_policy" {
 }
 
 /*
- * Login gets it own Lambda function
+ * App Lambda starts here
  */
-data "archive_file" "lambda_login" {
+data "archive_file" "lambda_app" {
   type = "zip"
-  source_dir = "${path.module}/login"
-  output_path = "${path.module}/login.zip"
+  source_dir  = "${path.module}/app"
+  output_path = "${path.module}/app.zip"
 }
 
-resource "aws_s3_object" "lambda_login" {
+resource "aws_s3_object" "lambda_app" {
   bucket = aws_s3_bucket.lambda_bucket.id
-  key    = "login.zip"
-  source = data.archive_file.lambda_login.output_path
-  etag = filemd5(data.archive_file.lambda_login.output_path)
+  key    = "app.zip"
+  source = data.archive_file.lambda_app.output_path
+  etag = filemd5(data.archive_file.lambda_app.output_path)
 }
 
-/*
- * Upload login.html to the same S3 bucket
- */
-resource "aws_s3_object" "login_html" {
-  bucket = aws_s3_bucket.lambda_bucket.id
-  key    = "templates/login.html"
-  content = templatefile("${path.module}/login/templates/login.html", {
-    cognito_domain        = var.cognito_domain
-    cognito_app_client_id = var.cognito_app_client_id
-    redirect_uri          = "/login"
-  })
-
-  content_type  = "text/html"
-  cache_control = "no-cache, no-store, must-revalidate"
-}
-
-resource "aws_iam_policy" "lambda_s3_access" {
-  name = "LambdaS3Access"
-
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect = "Allow",
-        Action = "s3:GetObject",
-        Resource = "${aws_s3_bucket.lambda_bucket.arn}/templates/login.html"
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "lambda_s3_access_attachment" {
-  role       = aws_iam_role.lambda_exec.name
-  policy_arn = aws_iam_policy.lambda_s3_access.arn
-}
-
-resource "aws_lambda_function" "login" {
-  function_name = "GreenBirdLogin"
+resource "aws_lambda_function" "app" {
+  function_name = "GreenBirdApp"
   s3_bucket = aws_s3_bucket.lambda_bucket.id
-  s3_key    = aws_s3_object.lambda_login.key
+  s3_key    = aws_s3_object.lambda_app.key
   runtime = "python3.12"
-  handler = "login_function.handler"
-  source_code_hash = data.archive_file.lambda_login.output_base64sha256
+  handler = "app.handler"
+  source_code_hash = data.archive_file.lambda_app.output_base64sha256
   role = aws_iam_role.lambda_exec.arn
-  environment {
-    variables = {
-      BUCKET_NAME = aws_s3_bucket.lambda_bucket.id
-    }
-  }
 }
 
-resource "aws_cloudwatch_log_group" "green-bird-login-log-group" {
-  name = "/aws/lambda/${aws_lambda_function.login.function_name}"
+resource "aws_cloudwatch_log_group" "green-bird-app-log-group" {
+  name = "/aws/lambda/${aws_lambda_function.app.function_name}"
   retention_in_days = 30
 }
 
 resource "aws_lambda_permission" "api_gw_login" {
   statement_id  = "AllowExecutionFromAPIGateway"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.login.function_name
+  function_name = aws_lambda_function.app.function_name
   principal     = "apigateway.amazonaws.com"
   source_arn = "${var.api_gateway_api_execution_arn}/*/*"
 }
 
-resource "aws_apigatewayv2_integration" "web_login" {
+resource "aws_apigatewayv2_integration" "app_integration" {
   api_id = var.api_gateway_api_id
-  integration_uri    = aws_lambda_function.login.invoke_arn
+  integration_uri    = aws_lambda_function.app.invoke_arn
   integration_type   = "AWS_PROXY"
   connection_type    = "INTERNET"
   integration_method = "POST"
 }
 
-resource "aws_apigatewayv2_route" "web_login" {
+resource "aws_apigatewayv2_route" "app" {
   api_id = var.api_gateway_api_id
-  route_key = "GET /login"
-  target = "integrations/${aws_apigatewayv2_integration.web_login.id}"
-  authorization_type = "NONE"
+  route_key = "GET /app"
+  target    = "integrations/${aws_apigatewayv2_integration.app_integration.id}"
+  authorization_type = "JWT"
+  authorizer_id = var.api_gateway_authorizer_id
 }
-
 /*
- * Application Lambda starts here
+ * Auth Lambda starts here
  */
-data "archive_file" "lambda_web" {
+data "archive_file" "lambda_auth" {
   type = "zip"
-  source_dir  = "${path.module}/web"
-  output_path = "${path.module}/web.zip"
+  source_dir  = "${path.module}/auth"
+  output_path = "${path.module}/auth.zip"
 }
 
-resource "aws_s3_object" "lambda_web" {
+resource "aws_s3_object" "lambda_auth" {
   bucket = aws_s3_bucket.lambda_bucket.id
-  key    = "web.zip"
-  source = data.archive_file.lambda_web.output_path
-  etag = filemd5(data.archive_file.lambda_web.output_path)
+  key    = "auth.zip"
+  source = data.archive_file.lambda_auth.output_path
+  etag = filemd5(data.archive_file.lambda_auth.output_path)
 }
 
-resource "aws_lambda_function" "web" {
-  function_name = "GreenBirdWeb"
+resource "aws_lambda_function" "auth_redirect" {
+  function_name = "GreenBirdAuth"
   s3_bucket = aws_s3_bucket.lambda_bucket.id
-  s3_key    = aws_s3_object.lambda_web.key
+  s3_key    = aws_s3_object.lambda_auth.key
   runtime = "python3.12"
-  handler = "web_function.handler"
-  source_code_hash = data.archive_file.lambda_web.output_base64sha256
+  handler = "auth_redirect_function.handler"
+  source_code_hash = data.archive_file.lambda_auth.output_base64sha256
   role = aws_iam_role.lambda_exec.arn
+  environment {
+    variables = {
+      COGNITO_DOMAIN    = var.cognito_domain
+      COGNITO_CLIENT_ID = var.cognito_app_client_id
+      REDIRECT_URI      = var.redirect_uri
+      COGNITO_ISSUER    = var.cognito_issuer
+    }
+  }
+
 }
 
-resource "aws_cloudwatch_log_group" "green-bird-web-log-group" {
-  name = "/aws/lambda/${aws_lambda_function.web.function_name}"
+resource "aws_cloudwatch_log_group" "green-bird-auth-log-group" {
+  name = "/aws/lambda/${aws_lambda_function.auth_redirect.function_name}"
   retention_in_days = 30
 }
 
 resource "aws_lambda_permission" "api_gw" {
   statement_id  = "AllowExecutionFromAPIGateway"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.web.function_name
+  function_name = aws_lambda_function.auth_redirect.function_name
   principal     = "apigateway.amazonaws.com"
 
   source_arn = "${var.api_gateway_api_execution_arn}/*/*"
 }
 
-resource "aws_apigatewayv2_integration" "web" {
+resource "aws_apigatewayv2_integration" "auth_integration" {
   api_id = var.api_gateway_api_id
 
-  integration_uri    = aws_lambda_function.web.invoke_arn
+  integration_uri    = aws_lambda_function.auth_redirect.invoke_arn
   integration_type   = "AWS_PROXY"
   connection_type    = "INTERNET" 
   integration_method = "POST"
 }
 
-resource "aws_apigatewayv2_route" "web" {
+resource "aws_apigatewayv2_route" "root" {
   api_id = var.api_gateway_api_id
-
-  route_key = "GET /hello"
-  target    = "integrations/${aws_apigatewayv2_integration.web.id}"
-  authorization_type = "JWT"
-  authorizer_id = var.api_gateway_authorizer_id
+  route_key = "GET /"
+  target    = "integrations/${aws_apigatewayv2_integration.auth_integration.id}"
 }
