@@ -11,7 +11,6 @@ provider "aws" {
 
 resource "aws_cognito_user_pool" "gerg_ing_pool" {
   name = "gerg_ing_user_pool"
-
   email_verification_subject = "Your Verification Code"
   email_verification_message = "Please use the following code: {####}"
   alias_attributes           = ["email"]
@@ -54,11 +53,18 @@ resource "aws_cognito_user_pool" "gerg_ing_pool" {
       max_length = 256
     }
   }
+  
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_cognito_user_pool_client" "gerg_ing_client" {
   name = "gerg_ing_user_pool_client"
   explicit_auth_flows = ["ALLOW_USER_PASSWORD_AUTH", "ALLOW_REFRESH_TOKEN_AUTH"]
   user_pool_id  = aws_cognito_user_pool.gerg_ing_pool.id
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
