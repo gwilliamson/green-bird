@@ -2,7 +2,7 @@ resource "aws_apigatewayv2_api" "gateway" {
   name          = "serverless_lambda_gw"
   protocol_type = "HTTP"
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -28,7 +28,7 @@ resource "aws_apigatewayv2_stage" "lambda" {
     )
   }
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -42,42 +42,42 @@ resource "aws_apigatewayv2_authorizer" "auth" {
     issuer   = "https://${var.cognito_user_pool_endpoint}"
   }
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
-resource "aws_apigatewayv2_domain_name" "gerg_ing" {
-  domain_name = "www.gerg.ing"
+resource "aws_apigatewayv2_domain_name" "api" {
+  domain_name = "api.gerg.ing"
   domain_name_configuration {
     certificate_arn = var.aws_acm_certificate_arn
     endpoint_type = "REGIONAL"
     security_policy = "TLS_1_2"
   }
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
-resource "aws_apigatewayv2_api_mapping" "gerg_ing" {
+resource "aws_apigatewayv2_api_mapping" "api_mapping" {
   api_id = aws_apigatewayv2_api.gateway.id
-  domain_name = aws_apigatewayv2_domain_name.gerg_ing.domain_name
+  domain_name = aws_apigatewayv2_domain_name.api.domain_name
   stage = aws_apigatewayv2_stage.lambda.id
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
-resource "aws_route53_record" "www_record" {
+resource "aws_route53_record" "api_record" {
   zone_id = var.aws_route53_hosted_zone_id
-  name    = "www.gerg.ing"
+  name    = "api.gerg.ing"
   type    = "A"
   alias {
-    name                   = aws_apigatewayv2_domain_name.gerg_ing.domain_name_configuration[0].target_domain_name
-    zone_id                = aws_apigatewayv2_domain_name.gerg_ing.domain_name_configuration[0].hosted_zone_id
+    name                   = aws_apigatewayv2_domain_name.api.domain_name_configuration[0].target_domain_name
+    zone_id                = aws_apigatewayv2_domain_name.api.domain_name_configuration[0].hosted_zone_id
     evaluate_target_health = false
   }
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 

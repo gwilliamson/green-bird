@@ -59,7 +59,7 @@ resource "aws_cognito_user_pool" "gerg_ing_pool" {
   }
   
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -73,7 +73,7 @@ resource "aws_cognito_user_pool_client" "gerg_ing_client" {
   callback_urls              = ["https://www.gerg.ing/app"]
   logout_urls                = ["https://www.gerg.ing/logout"]
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 

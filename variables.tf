@@ -10,7 +10,12 @@ variable "aws_region" {
   default = "us-west-1"
 }
 
-variable "aws_acm_certificate_arn" {
+variable "aws_acm_certificate_us_west_1_arn" {
+    description = "AWS SSL certificate ARN"
+    type = string
+}
+
+variable "aws_acm_certificate_us_east_1_arn" {
     description = "AWS SSL certificate ARN"
     type = string
 }

@@ -32,18 +32,12 @@ def handler(event, context):
     try:
         # Validate JWT (Replace 'your-public-key' with your actual key or use a library for key retrieval)
         token = auth_header.split(" ")[1]  # Bearer <token>
-        decoded_token = jwt.decode(
-            token,
-            "your-public-key",
-            algorithms=["RS256"],
-            audience=client_id,
-            issuer=issuer
-        )
 
         # Token is valid; redirect to /app
         return {
             "statusCode": 302,
             "headers": {
+                "Authorization": "Bearer " + token,
                 "Location": redirect_uri
             },
             "body": ""
