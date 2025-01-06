@@ -1,0 +1,6 @@
+boto3==1.34.48
+brotli==1.1.0
+brotlicffi==1.1.0.0
+chardet==5.2.0
+cryptography==42.0.4
+requests==2.32.3

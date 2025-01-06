@@ -20,12 +20,22 @@ variable "aws_route53_hosted_zone_id" {
   type = string
 }
 
-variable "cognito_user_pool_client_id" {
-  description = "AWS Cognito User Pool Client ID"
+variable "green_bird_www_domain" {
+  description = "Green Bird Backend Domain"
   type = string
 }
 
-variable "cognito_user_pool_endpoint" {
-  description = "AWS Cognito User Pool Endpoint"
+variable "green_bird_api_domain" {
+  description = "Green Bird Backend Domain"
+  type = string
+}
+
+variable "cognito_user_pool_id" {
+  description = "AWS Cognito User Pool ID"
+  type = string
+}
+
+variable "cognito_client_id" {
+  description = "AWS Cognito User Pool Client ID"
   type = string
 }

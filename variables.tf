@@ -24,3 +24,18 @@ variable "aws_route53_hosted_zone_id" {
     description = "AWS Route 53 Hosted Zone ID"
     type = string
 }
+
+variable "green_bird_www_domain" {
+  description = "Frontend Domain"
+  type = string
+}
+
+variable "green_bird_api_domain" {
+  description = "Backend Domain"
+  type = string
+}
+
+variable "auth_cookie_domain" {
+  description = "Cookie Domain"
+  type = string
+}
