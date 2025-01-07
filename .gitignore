@@ -242,6 +242,7 @@ fabric.properties
 # Terraform directories
 **/.terraform/
 **/terraform.tfstate*
+**/terraform.tfvars
 
 # www zip
 modules/www/*.zip
