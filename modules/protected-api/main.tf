@@ -1,31 +1,4 @@
 /*
- * S3 Bucket for Lambda function code
- * TODO: A bucket is unnecessary. Package the zip like in the other modules.
- */
-resource "random_pet" "lambda_bucket_name" {
-  prefix = "green-bird-protected"
-  length = 2
-}
-
-resource "aws_s3_bucket" "protected_api_bucket" {
-  bucket = random_pet.lambda_bucket_name.id
-}
-
-resource "aws_s3_bucket_ownership_controls" "protected_api_bucket_ownership" {
-  bucket = aws_s3_bucket.protected_api_bucket.id
-  rule {
-    object_ownership = "BucketOwnerPreferred"
-  }
-}
-
-resource "aws_s3_bucket_acl" "protected_api_bucket_acl" {
-  depends_on = [aws_s3_bucket_ownership_controls.protected_api_bucket_ownership]
-
-  bucket = aws_s3_bucket.protected_api_bucket.id
-  acl    = "private"
-}
-
-/*
  * An IAM role for executing lambdas
  */
 resource "aws_iam_role" "lambda_exec" {
@@ -61,20 +34,6 @@ resource "aws_iam_policy" "cloudwatch_logs_policy" {
           "logs:PutLogEvents"
         ],
         Resource: "arn:aws:logs:*:*:*"
-      },
-      {
-        Effect: "Allow",
-        Action: [
-          "s3:GetObject"
-        ],
-        Resource = "${aws_s3_bucket.protected_api_bucket.arn}/*"
-      },
-      {
-        Effect: "Allow",
-        Action: [
-          "s3:ListBucket"
-        ],
-        Resource = "${aws_s3_bucket.protected_api_bucket.arn}"
       }
     ]
   })
@@ -85,30 +44,13 @@ resource "aws_iam_role_policy_attachment" "lambda_logs_policy_attachment" {
   policy_arn = aws_iam_policy.cloudwatch_logs_policy.arn
 }
 
-/*
- * Protected API Lambda starts here
- */
-data "archive_file" "lambda_app" {
-  type        = "zip"
-  source_dir  = "${path.module}/protected"
-  output_path = "${path.module}/protected.zip"
-}
-
-resource "aws_s3_object" "lambda_app" {
-  bucket = aws_s3_bucket.protected_api_bucket.id
-  key    = "protected.zip"
-  source = data.archive_file.lambda_app.output_path
-  etag   = filemd5(data.archive_file.lambda_app.output_path)
-}
-
 resource "aws_lambda_function" "protected_api" {
   function_name    = "ProtectedEndpoint"
-  s3_bucket        = aws_s3_bucket.protected_api_bucket.id
-  s3_key           = aws_s3_object.lambda_app.key
   runtime          = "python3.9"
   handler          = "protected.handler"
-  source_code_hash = data.archive_file.lambda_app.output_base64sha256
   role             = aws_iam_role.lambda_exec.arn
+  filename         = "${path.module}/protected/dist/protected.zip"
+  source_code_hash = filebase64sha256("${path.module}/protected/dist/protected.zip")
 }
 
 resource "aws_cloudwatch_log_group" "protected_api_log_group" {
