@@ -62,8 +62,8 @@ def handler(event, context):
             <head>
                 <title>Redirecting...</title>
                 <script>
-                    // Redirect to /protected after cookies are set
-                    window.location.href = "/protected";
+                    // Redirect to /api after cookies are set
+                    window.location.href = "/api";
                 </script>
             </head>
             <body>

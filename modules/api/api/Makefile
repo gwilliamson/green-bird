@@ -1,5 +1,5 @@
 # Variables
-APP_NAME := protected
+APP_NAME := top
 PYTHON_VERSION := 3.12
 DOCKER_IMAGE := public.ecr.aws/lambda/python:$(PYTHON_VERSION)
 BUILD_DIR := build
@@ -24,7 +24,7 @@ build: make_build_dir make_dist_dir
 		-c "pip install --platform manylinux2014_x86_64 --only-binary=:all: --target=$(BUILD_DIR) -r requirements.txt"
 
 	# Copy the Lambda handler file into the build directory
-	cp protected.py $(BUILD_DIR)/
+	cp top.py $(BUILD_DIR)/
 
 # Package the Lambda function
 package: build

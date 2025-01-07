@@ -56,13 +56,13 @@ module "login-page" {
 }
 
 /*
- * protected-api module
+ * api module
  * - Lambda functions
  * - Fronted by the API Gateway from the apigateway module
  * - Protected by the Lambda authorizer from the apigateway module
  */
-module "protected-api" {
-  source = "./modules/protected-api"
+module "api" {
+  source = "./modules/api"
   api_gateway_api_id = module.apigateway.id
   api_gateway_api_execution_arn = module.apigateway.execution_arn
   api_gateway_cognito_authorizer_id = module.apigateway.authorizer_id

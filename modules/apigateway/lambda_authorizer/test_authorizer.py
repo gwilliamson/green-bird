@@ -16,7 +16,7 @@ def valid_event():
         "headers": {
             "cookie": "access_token=valid_token; refresh_token=another_token;"
         },
-        "routeArn": "arn:aws:execute-api:region:account-id:api-id/stage-name/GET/protected"
+        "routeArn": "arn:aws:execute-api:region:account-id:api-id/stage-name/GET/api"
     }
 
 @pytest.fixture
@@ -26,7 +26,7 @@ def expired_event():
         "headers": {
             "cookie": "access_token=expired_token; refresh_token=another_token;"
         },
-        "routeArn": "arn:aws:execute-api:region:account-id:api-id/stage-name/GET/protected"
+        "routeArn": "arn:aws:execute-api:region:account-id:api-id/stage-name/GET/api"
     }
 
 @patch("authorizer.jwt.PyJWKClient")
