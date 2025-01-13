@@ -6,7 +6,7 @@
 variable "aws_region" {
   description = "AWS region for all resources."
   type    = string
-  default = "us-west-1"
+  default = "us-east-1"
 }
 
 variable "api_gateway_api_id" {

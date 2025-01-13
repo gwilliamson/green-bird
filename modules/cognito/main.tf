@@ -83,11 +83,32 @@ resource "aws_cognito_user_pool_domain" "green-bird-domain" {
   user_pool_id = aws_cognito_user_pool.green_bird_user_pool.id
 }
 
+resource "aws_ssm_parameter" "cognito_region" {
+  name = "/cognito/green_bird_region"
+  type = "String"
+  value = var.aws_region
+  description = "AWS region where the Cognito user pool lives"
+}
+
+resource "aws_ssm_parameter" "cognito_user_pool_id" {
+  name  = "/cognito/green_bird_user_pool_id"
+  type  = "String"
+  value = aws_cognito_user_pool.green_bird_user_pool.id
+  description = "Cognito user pool id"
+}
+
 resource "aws_ssm_parameter" "cognito_client_secret" {
-  name        = "/cognito/client_secret"
+  name        = "/cognito/green_bird_client_secret"
   type        = "SecureString"
   value       = aws_cognito_user_pool_client.green_bird_client.client_secret
   description = "Cognito client secret"
+}
+
+resource "aws_ssm_parameter" "cognito_client_id" {
+  name  = "/cognito/green_bird_client_id"
+  type  = "String"
+  value = aws_cognito_user_pool_client.green_bird_client.id
+  description = "Cognito client id"
 }
 
 /*
@@ -130,7 +151,7 @@ resource "aws_iam_role_policy" "lambda_ssm_access" {
       {
         Action = "ssm:GetParameter",
         Effect = "Allow",
-        Resource = "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/cognito/client_secret"
+        Resource = "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter${aws_ssm_parameter.cognito_client_secret.name}"
       }
     ]
   })

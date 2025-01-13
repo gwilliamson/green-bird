@@ -17,7 +17,7 @@ provider "aws" {
  */
 module "apigateway" {
   source = "./modules/apigateway"
-  aws_acm_certificate_arn = var.aws_acm_certificate_us_west_1_arn
+  aws_acm_certificate_arn = var.aws_acm_certificate_us_east_1_arn
   aws_route53_hosted_zone_id = var.aws_route53_hosted_zone_id
   cognito_user_pool_id = module.cognito.user_pool_id
   cognito_client_id = module.cognito.cognito_client_id
@@ -39,14 +39,15 @@ module "cognito" {
 }
 
 /*
- * login-page module
+ * www module
+ * - Frontend files
  * - An HTML page that redirects to Cognito
  * - Stored in S3
  * - Delivered by CloudFront
  * - Route53 record for www
  */
-module "login-page" {
-  source = "./modules/login-page"
+module "www" {
+  source = "./modules/www"
   aws_acm_certificate_arn = var.aws_acm_certificate_us_east_1_arn
   aws_route53_hosted_zone_id = var.aws_route53_hosted_zone_id
   cognito_domain = module.cognito.cognito_domain

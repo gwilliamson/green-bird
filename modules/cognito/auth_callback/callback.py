@@ -62,8 +62,8 @@ def handler(event, context):
             <head>
                 <title>Redirecting...</title>
                 <script>
-                    // Redirect to /api after cookies are set
-                    window.location.href = "/api";
+                    // Redirect to the www site after cookies are set
+                    window.location.href = "https://www.gerg.ing";
                 </script>
             </head>
             <body>
@@ -77,7 +77,7 @@ def get_client_secret():
     """Retrieve the client secret from AWS Parameter Store."""
     ssm = client("ssm", region_name=os.environ["AWS_REGION"])
     response = ssm.get_parameter(
-        Name="/cognito/client_secret",
+        Name="/cognito/green_bird_client_secret",
         WithDecryption=True
     )
     return response["Parameter"]["Value"]

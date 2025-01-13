@@ -7,7 +7,7 @@ variable "aws_region" {
   description = "AWS region for all resources."
 
   type    = string
-  default = "us-west-1"
+  default = "us-east-1"
 }
 
 variable "aws_acm_certificate_arn" {

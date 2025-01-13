@@ -127,7 +127,7 @@ resource "aws_iam_role_policy" "lambda_logging_policy" {
 
 # Create the Lambda function using the built archive
 resource "aws_lambda_function" "authorizer_lambda" {
-  function_name = "GreenBirdLambdaAuthorizer"
+  function_name = "GreenBirdAPIAuthorizer"
   runtime       = "python3.12"
   handler       = "authorizer.handler"
   role          = aws_iam_role.lambda_execution_role.arn
@@ -152,7 +152,7 @@ resource "aws_lambda_permission" "api_gateway" {
 
 resource "aws_apigatewayv2_authorizer" "lambda_authorizer" {
   api_id           = aws_apigatewayv2_api.gateway.id
-  name             = "GreenBirdLambdaAuthorizer"
+  name             = "GreenBirdAPIAuthorizer"
   authorizer_type  = "REQUEST"
   authorizer_uri   = "arn:aws:apigateway:${var.aws_region}:lambda:path/2015-03-31/functions/${aws_lambda_function.authorizer_lambda.arn}/invocations"
   identity_sources = ["$request.header.Cookie"]  # Extract the token from the Cookie header

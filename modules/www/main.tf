@@ -1,11 +1,19 @@
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "5.54.1"
+    }
+  }
+}
 // S3 Bucket to store frontend files
-resource "aws_s3_bucket" "login_frontend" {
+resource "aws_s3_bucket" "frontend" {
   bucket = "green-bird-frontend-bucket-${random_id.bucket_suffix.hex}"
 
   # Enforce bucket ownership
   force_destroy = true
   tags = {
-    Name = "ReactFrontendBucket"
+    Name = "GreenBirdFrontendBucket"
   }
 }
 
@@ -15,7 +23,7 @@ resource "random_id" "bucket_suffix" {
 
 // Block public access to the bucket
 resource "aws_s3_bucket_public_access_block" "frontend_block" {
-  bucket                  = aws_s3_bucket.login_frontend.id
+  bucket                  = aws_s3_bucket.frontend.id
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
@@ -24,7 +32,7 @@ resource "aws_s3_bucket_public_access_block" "frontend_block" {
 
 // Policy to allow CloudFront access to the bucket
 resource "aws_s3_bucket_policy" "frontend_policy" {
-  bucket = aws_s3_bucket.login_frontend.id
+  bucket = aws_s3_bucket.frontend.id
 
   policy = jsonencode({
     Version = "2012-10-17",
@@ -35,13 +43,13 @@ resource "aws_s3_bucket_policy" "frontend_policy" {
           AWS = aws_cloudfront_origin_access_identity.s3.iam_arn
         },
         Action    = "s3:GetObject",
-        Resource  = "${aws_s3_bucket.login_frontend.arn}/*"
+        Resource  = "${aws_s3_bucket.frontend.arn}/*"
       }
     ]
   })
 }
 
-// Build site file from templates
+// Build login redirect file from template
 resource "local_file" "login_redirect_html" {
   filename = "${path.module}/files/login.html"
   content = templatefile("${path.module}/templates/login.html.tpl", {
@@ -53,7 +61,7 @@ resource "local_file" "login_redirect_html" {
 resource "aws_s3_object" "login_frontend_files" {
   for_each = fileset("${path.module}/files", "**/*")
 
-  bucket       = aws_s3_bucket.login_frontend.id
+  bucket       = aws_s3_bucket.frontend.id
   key          = each.key
   source       = "${path.module}/files/${each.key}"
   content_type = lookup(
@@ -64,14 +72,29 @@ resource "aws_s3_object" "login_frontend_files" {
   etag = filemd5("${path.module}/files/${each.key}")
 }
 
+// App dist
+resource "aws_s3_object" "app_dist" {
+  for_each = fileset("${path.module}/app/dist", "**/*")
+
+  bucket       = aws_s3_bucket.frontend.id
+  key          = each.key
+  source       = "${path.module}/app/dist/${each.key}"
+  content_type = lookup(
+    var.mime_types,
+    regex("[.][^.]+$", each.key),  # Extract file extension
+    "application/octet-stream"    # Default MIME type
+  )
+  etag = filemd5("${path.module}/app/dist/${each.key}")
+}
+
 resource "aws_cloudfront_origin_access_identity" "s3" {
   comment = "OAI for CloudFront to access S3"
 }
 
 resource "aws_cloudfront_distribution" "auth_frontend" {
   origin {
-    domain_name = aws_s3_bucket.login_frontend.bucket_regional_domain_name
-    origin_id   = "S3-${aws_s3_bucket.login_frontend.id}"
+    domain_name = aws_s3_bucket.frontend.bucket_regional_domain_name
+    origin_id   = "S3-${aws_s3_bucket.frontend.id}"
 
     s3_origin_config {
       origin_access_identity = aws_cloudfront_origin_access_identity.s3.cloudfront_access_identity_path
@@ -85,16 +108,18 @@ resource "aws_cloudfront_distribution" "auth_frontend" {
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD"]
     cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "S3-${aws_s3_bucket.login_frontend.id}"
-
+    target_origin_id = "S3-${aws_s3_bucket.frontend.id}"
+    viewer_protocol_policy = "redirect-to-https"
+    lambda_function_association {
+      event_type = "viewer-request"
+      lambda_arn = aws_lambda_function.edge_authorizer.qualified_arn
+    }
     forwarded_values {
       query_string = true
       cookies {
         forward = "none"
       }
     }
-
-    viewer_protocol_policy = "redirect-to-https"
   }
 
   restrictions {
@@ -130,4 +155,66 @@ resource "aws_route53_record" "www" {
     zone_id                = aws_cloudfront_distribution.auth_frontend.hosted_zone_id
     evaluate_target_health = false
   }
+}
+
+resource "aws_iam_role" "lambda_role" {
+  name = "GreenBirdFrontendAuthorizerRole"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect    = "Allow",
+        Principal = { Service = "lambda.amazonaws.com" },
+        Action    = "sts:AssumeRole"
+      },
+      {
+        Effect    = "Allow",
+        Principal = { Service = "edgelambda.amazonaws.com" },
+        Action    = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "lambda_policy" {
+  name   = "GreenBirdFrontendAuthorizerRolePolicy"
+  role   = aws_iam_role.lambda_role.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      # Allow fetching parameters from AWS SSM Parameter Store
+      {
+        Effect   = "Allow",
+        Action   = [
+          "ssm:GetParameter"
+        ],
+        Resource = [
+          "arn:aws:ssm:*:*:parameter/cognito/green_bird_region",
+          "arn:aws:ssm:*:*:parameter/cognito/green_bird_user_pool_id",
+          "arn:aws:ssm:*:*:parameter/cognito/green_bird_client_id"
+        ]
+      },
+      # Allow logging to CloudWatch Logs
+      {
+        Effect   = "Allow",
+        Action   = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ],
+        Resource = "arn:aws:logs:*:*:*"
+      }
+    ]
+  })
+}
+
+resource "aws_lambda_function" "edge_authorizer" {
+  function_name = "GreenBirdFrontendAuthorizer"
+  runtime       = "python3.12"
+  handler       = "authorizer.handler"
+  role = aws_iam_role.lambda_role.arn
+  filename      = "${path.module}/lambda_edge_authorizer/dist/authorizer.zip"
+  source_code_hash = filebase64sha256("${path.module}/lambda_edge_authorizer/dist/authorizer.zip")
+  publish = true
 }
