@@ -110,10 +110,6 @@ resource "aws_cloudfront_distribution" "auth_frontend" {
     cached_methods   = ["GET", "HEAD"]
     target_origin_id = "S3-${aws_s3_bucket.frontend.id}"
     viewer_protocol_policy = "redirect-to-https"
-    lambda_function_association {
-      event_type = "viewer-request"
-      lambda_arn = aws_lambda_function.edge_authorizer.qualified_arn
-    }
     forwarded_values {
       query_string = true
       cookies {
@@ -155,66 +151,4 @@ resource "aws_route53_record" "www" {
     zone_id                = aws_cloudfront_distribution.auth_frontend.hosted_zone_id
     evaluate_target_health = false
   }
-}
-
-resource "aws_iam_role" "lambda_role" {
-  name = "GreenBirdFrontendAuthorizerRole"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect    = "Allow",
-        Principal = { Service = "lambda.amazonaws.com" },
-        Action    = "sts:AssumeRole"
-      },
-      {
-        Effect    = "Allow",
-        Principal = { Service = "edgelambda.amazonaws.com" },
-        Action    = "sts:AssumeRole"
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy" "lambda_policy" {
-  name   = "GreenBirdFrontendAuthorizerRolePolicy"
-  role   = aws_iam_role.lambda_role.id
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      # Allow fetching parameters from AWS SSM Parameter Store
-      {
-        Effect   = "Allow",
-        Action   = [
-          "ssm:GetParameter"
-        ],
-        Resource = [
-          "arn:aws:ssm:*:*:parameter/cognito/green_bird_region",
-          "arn:aws:ssm:*:*:parameter/cognito/green_bird_user_pool_id",
-          "arn:aws:ssm:*:*:parameter/cognito/green_bird_client_id"
-        ]
-      },
-      # Allow logging to CloudWatch Logs
-      {
-        Effect   = "Allow",
-        Action   = [
-          "logs:CreateLogGroup",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents"
-        ],
-        Resource = "arn:aws:logs:*:*:*"
-      }
-    ]
-  })
-}
-
-resource "aws_lambda_function" "edge_authorizer" {
-  function_name = "GreenBirdFrontendAuthorizer"
-  runtime       = "python3.12"
-  handler       = "authorizer.handler"
-  role = aws_iam_role.lambda_role.arn
-  filename      = "${path.module}/lambda_edge_authorizer/dist/authorizer.zip"
-  source_code_hash = filebase64sha256("${path.module}/lambda_edge_authorizer/dist/authorizer.zip")
-  publish = true
 }
