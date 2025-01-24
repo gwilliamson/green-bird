@@ -24,6 +24,11 @@ variable "green_bird_api_domain" {
   type = string
 }
 
+variable "green_bird_www_domain" {
+  description = "Frontend domain"
+  type = string
+}
+
 variable "auth_cookie_domain" {
   description = "Domain for cookies"
   type = string
