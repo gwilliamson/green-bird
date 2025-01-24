@@ -16,12 +16,16 @@ resource "aws_cognito_user_pool" "green_bird_user_pool" {
   alias_attributes           = ["email"]
   auto_verified_attributes   = ["email"]
 
+  mfa_configuration = "ON"
+  software_token_mfa_configuration {
+    enabled = true
+  }
   admin_create_user_config {
     allow_admin_create_user_only = true
   }
 
   password_policy {
-    minimum_length    = 6
+    minimum_length    = 12
     require_lowercase = true
     require_numbers   = true
     require_symbols   = true
@@ -67,11 +71,11 @@ resource "aws_cognito_user_pool_client" "green_bird_client" {
   name = "GreenBirdUserPoolClient"
   user_pool_id  = aws_cognito_user_pool.green_bird_user_pool.id
   allowed_oauth_flows        = ["code"]
-  allowed_oauth_scopes       = ["openid", "profile", "aws.cognito.signin.user.admin"]
+  allowed_oauth_scopes       = ["openid", "email", "profile", "aws.cognito.signin.user.admin"]
   supported_identity_providers = ["COGNITO"]
   allowed_oauth_flows_user_pool_client = true
   callback_urls              = ["https://${var.green_bird_api_domain}/auth/callback"]
-  logout_urls                = ["https://${var.green_bird_api_domain}/logout"]
+  logout_urls                = ["https://${var.green_bird_www_domain}"]
   generate_secret = true
   lifecycle {
     prevent_destroy = false
