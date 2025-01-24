@@ -2,7 +2,7 @@ import json
 
 def handler(event, context):
     """
-    Simple Lambda function for the /api route.
+    Lambda function for the /user route.
     """
     # Extract claims from the event if available
     claims = event.get("requestContext", {}).get("authorizer", {})
@@ -19,7 +19,6 @@ def handler(event, context):
     return {
         "statusCode": 200,
         "body": json.dumps({
-            "message": "Welcome to the API!",
             "userId": user_id,
             "username": username,
             "email": email

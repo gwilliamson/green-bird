@@ -1,10 +1,9 @@
 # Variables
-APP_NAME := top
 PYTHON_VERSION := 3.12
 DOCKER_IMAGE := public.ecr.aws/lambda/python:$(PYTHON_VERSION)
 BUILD_DIR := build
 DIST_DIR := dist
-ZIP_FILE := $(DIST_DIR)/$(APP_NAME).zip
+ZIP_FILE := $(DIST_DIR)/handler.zip
 
 # Create directories if they don't exist
 make_build_dir:
@@ -15,16 +14,14 @@ make_dist_dir:
 
 # Build the Lambda package
 build: make_build_dir make_dist_dir
-	# Install dependencies into the build directory
 	docker run --rm \
 		--entrypoint /bin/bash \
 		-v $(PWD):/var/task \
 		-w /var/task \
 		$(DOCKER_IMAGE) \
-		-c "pip install --platform manylinux2014_x86_64 --only-binary=:all: --target=$(BUILD_DIR) -r requirements.txt"
+		-c "pip install --root-user-action ignore --platform manylinux2014_x86_64 --only-binary=:all: --target=$(BUILD_DIR) -r requirements.txt"
 
-	# Copy the Lambda handler file into the build directory
-	cp top.py $(BUILD_DIR)/
+	cp user_lambda.py $(BUILD_DIR)/
 
 # Package the Lambda function
 package: build
