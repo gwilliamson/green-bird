@@ -49,29 +49,6 @@ resource "aws_s3_bucket_policy" "frontend_policy" {
   })
 }
 
-// Build login redirect file from template
-resource "local_file" "login_redirect_html" {
-  filename = "${path.module}/files/login.html"
-  content = templatefile("${path.module}/templates/login.html.tpl", {
-    COGNITO_LOGIN_URL = "https://${var.cognito_domain}/oauth2/authorize?response_type=code&client_id=${var.cognito_client_id}&redirect_uri=${urlencode("https://${var.green_bird_api_domain}/auth/callback")}"
-  })
-}
-
-// Upload the files to the S3 bucket
-resource "aws_s3_object" "login_frontend_files" {
-  for_each = fileset("${path.module}/files", "**/*")
-
-  bucket       = aws_s3_bucket.frontend.id
-  key          = each.key
-  source       = "${path.module}/files/${each.key}"
-  content_type = lookup(
-    var.mime_types,
-    regex("[.][^.]+$", each.key),  # Extract file extension
-    "application/octet-stream"    # Default MIME type
-  )
-  etag = filemd5("${path.module}/files/${each.key}")
-}
-
 // App dist
 resource "aws_s3_object" "app_dist" {
   for_each = fileset("${path.module}/app/dist", "**/*")
