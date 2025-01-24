@@ -36,6 +36,7 @@ module "cognito" {
   api_gateway_api_execution_arn = module.apigateway.execution_arn
   auth_cookie_domain = var.auth_cookie_domain
   green_bird_api_domain = var.green_bird_api_domain
+  green_bird_www_domain = var.green_bird_www_domain
 }
 
 /*
